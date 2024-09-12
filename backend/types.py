@@ -521,3 +521,9 @@ class CreateRagApplication(RagApplication):
 
 class RagApplicationDto(RagApplication):
     pass
+
+
+class S3Metadata(BaseModel):
+    bucket: str
+    prefix: str
+

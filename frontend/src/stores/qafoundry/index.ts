@@ -330,6 +330,17 @@ export const qafoundryApi = createApi({
       }),
       invalidatesTags: (_result, _opts) => [{ type: 'DataSources' }],
     }),
+    addS3DataSource: builder.mutation({
+      query: (payload: {
+        bucket: string
+        prefix?: string
+      }) => ({
+        url: '/v1/data_source/s3',
+        body: payload,
+        method: 'POST',
+      }),
+      invalidatesTags: ['DataSources'],
+    }),
     ingestDataSource: builder.mutation({
       query: (payload: {
         collection_name: string
@@ -387,6 +398,7 @@ export const {
   useDeleteDataSourceMutation,
   useQueryCollectionMutation,
   useAddDataSourceMutation,
+  useAddS3DataSourceMutation,
   useIngestDataSourceMutation,
   useCreateApplicationMutation,
   useDeleteApplicationMutation,

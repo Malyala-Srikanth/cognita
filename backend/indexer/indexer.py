@@ -24,6 +24,7 @@ from backend.types import (
     DataPointVector,
     IngestDataToCollectionDto,
     LoadedDataPoint,
+    S3Metadata,
 )
 
 
