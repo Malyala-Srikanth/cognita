@@ -25,32 +25,6 @@ services:
     networks:
       - cognita-docker
 
-  ollama-server:
-    image: ollama/ollama:0.1.42
-    pull_policy: if_not_present
-    restart: unless-stopped
-    container_name: ollama
-    profiles:
-      - ollama
-    volumes:
-      - ./volumes/ollama:/root/.ollama
-    ports:
-      - 11434:11434
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
-    environment:
-      - OLLAMA_KEEP_ALIVE=24h
-      - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_PORT=11434
-    entrypoint: /bin/bash
-    command: -c "set -e; ollama serve & sleep 10 && ollama pull ${OLLAMA_MODEL} && sleep infinity"
-    networks:
-      - cognita-docker
-
   infinity-server:
     image: michaelf34/infinity:0.0.51
     pull_policy: if_not_present
@@ -76,56 +50,25 @@ services:
     networks:
       - cognita-docker
 
-  qdrant-server:
-    image: qdrant/qdrant:v1.8.4
-    pull_policy: if_not_present
+  elasticsearch-server:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: elasticsearch
     restart: unless-stopped
-    container_name: qdrant
+    platform: linux/amd64
     ports:
-      - 6333:6333
-      - 6334:6334
-    expose:
-      - 6333
-      - 6334
-      - 6335
+      - 9200:9200
+      - 9300:9300
+    environment:
+      - discovery.type=single-node
+      - xpack.security.http.ssl.enabled=false
+      - xpack.license.self_generated.type=trial
+      - xpack.security.enabled=false
     healthcheck:
-      test: ["CMD-SHELL", "/bin/bash -c ':> /dev/tcp/0.0.0.0/6333'"]
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    volumes:
-      - ./volumes/qdrant_storage:/qdrant/storage:z
-    networks:
-      - cognita-docker
-
-  unstructured-io-parsers:
-    # Docs: http://localhost:9500/general/docs
-    image: downloads.unstructured.io/unstructured-io/unstructured-api:0.0.73
-    pull_policy: if_not_present
-    restart: unless-stopped
-    container_name: unstructured-api
-    ports:
-      - 9500:9500
-    expose:
-      - 9500
-    environment:
-      - PORT=9500
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-O",
-          "/dev/null",
-          "-o",
-          "/dev/null",
-          "http://localhost:9500/healthcheck",
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
     networks:
       - cognita-docker
 
@@ -133,6 +76,7 @@ services:
     build:
       context: .
       dockerfile: ./backend/Dockerfile
+    platform: linux/amd64
     restart: unless-stopped
     container_name: cognita-backend
     ports:
@@ -141,12 +85,10 @@ services:
       cognita-db:
         condition: service_healthy
         restart: true
-      qdrant-server:
+      elasticsearch-server:
         condition: service_healthy
         restart: true
-      unstructured-io-parsers:
-        condition: service_healthy
-        restart: true
+
     volumes:
       - .:/app
       - ./volumes/pgdata:/var/lib/postgresql/data

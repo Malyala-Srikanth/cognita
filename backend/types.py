@@ -194,6 +194,18 @@ class QdrantClientConfig(ConfiguredBaseModel):
     timeout: int = 300
 
 
+class ElasticsearchClientConfig(ConfiguredBaseModel):
+    """
+    Elasticsearch extra configuration
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    port: Optional[int] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    timeout: int = 300
+
 class MetadataStoreConfig(ConfiguredBaseModel):
     """
     Metadata store configuration

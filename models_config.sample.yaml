@@ -4,15 +4,15 @@ model_providers:
   #   using ollama and infinity model server                                    #
   ###############################################################################
 
-  - provider_name: local-ollama
-    api_format: openai
-    base_url: http://ollama-server:11434/v1/
-    api_key_env_var: ""
-    llm_model_ids:
-      - "qwen2:1.5b"
-    embedding_model_ids: []
-    reranking_model_ids: []
-    default_headers: {}
+  # - provider_name: local-ollama
+  #   api_format: openai
+  #   base_url: http://ollama-server:11434/v1/
+  #   api_key_env_var: ""
+  #   llm_model_ids:
+  #     - "qwen2:1.5b"
+  #   embedding_model_ids: []
+  #   reranking_model_ids: []
+  #   default_headers: {}
 
   - provider_name: local-infinity
     api_format: openai
@@ -29,17 +29,17 @@ model_providers:
 #   Remember to set `OPENAI_API_KEY` in container environment                 #
 ###############################################################################
 
-# - provider_name: openai
-#   api_format: openai
-#   api_key_env_var: OPENAI_API_KEY
-#   llm_model_ids:
-#     - "gpt-3.5-turbo"
-#     - "gpt-4o"
-#   embedding_model_ids:
-#     - "text-embedding-3-small"
-#     - "text-embedding-ada-002"
-#   reranking_model_ids: []
-#   default_headers: {}
+- provider_name: openai
+  api_format: openai
+  api_key_env_var: OPENAI_API_KEY
+  llm_model_ids:
+    - "gpt-3.5-turbo"
+    - "gpt-4o"
+  embedding_model_ids:
+    - "text-embedding-3-small"
+    - "text-embedding-ada-002"
+  reranking_model_ids: []
+  default_headers: {}
 
 ############################ TrueFoundry ###########################################
 #   Uncomment this provider if you want to use TrueFoundry as a models provider    #
