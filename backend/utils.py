@@ -4,6 +4,7 @@ from concurrent.futures import Executor, ProcessPoolExecutor
 from contextvars import copy_context
 from functools import partial
 from typing import Callable, Optional, TypeVar, cast
+from backend.logger import logger
 
 from typing_extensions import ParamSpec
 
@@ -91,7 +92,21 @@ async def run_in_executor(
 class AsyncProcessPoolExecutor(ProcessPoolExecutor):
     @staticmethod
     def _async_to_sync(__fn, *args, **kwargs):
-        return asyncio.run(__fn(*args, **kwargs))
+        try:
+            return asyncio.run(__fn(*args, **kwargs))
+        except Exception as e:
+            return Exception(f"Task failed: {str(e)}")
 
     def submit(self, __fn, *args, **kwargs):
-        return super().submit(self._async_to_sync, __fn, *args, **kwargs)
+        future = super().submit(self._async_to_sync, __fn, *args, **kwargs)
+        asyncio.create_task(self._check_future(future))
+        return future
+
+    async def _check_future(self, future):
+        try:
+            result = await asyncio.wrap_future(future)
+            if isinstance(result, Exception):
+                logger.error(f"Task in process pool failed: {result}")
+                # You could implement additional error handling here
+        except Exception as e:
+            logger.error(f"Error checking future in process pool: {e}")

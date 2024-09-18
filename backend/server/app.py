@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
@@ -12,6 +13,7 @@ from backend.server.routers.internal import router as internal_router
 from backend.server.routers.rag_apps import router as rag_apps_router
 from backend.settings import settings
 from backend.utils import AsyncProcessPoolExecutor
+from backend.logger import logger
 
 
 @asynccontextmanager
@@ -19,8 +21,32 @@ async def _process_pool_lifespan_manager(app: FastAPI):
     app.state.process_pool = AsyncProcessPoolExecutor(
         max_workers=settings.PROCESS_POOL_WORKERS
     )
-    yield  # FastAPI runs here
-    app.state.process_pool.shutdown(wait=True)
+
+    async def check_pool_health():
+        while True:
+            try:
+                # Submit a simple task to check if the pool is responsive
+                app.state.process_pool.submit(asyncio.sleep, 0)
+            except Exception as e:
+                logger.error(f"Process pool health check failed: {e}")
+                await restart_pool()
+            await asyncio.sleep(5)  # Check every 5 seconds
+
+    async def restart_pool():
+        logger.info("Restarting the process pool")
+        app.state.process_pool.shutdown(wait=True)
+        app.state.process_pool = AsyncProcessPoolExecutor(
+            max_workers=settings.PROCESS_POOL_WORKERS
+        )
+
+    health_check_task = asyncio.create_task(check_pool_health())
+
+    try:
+        yield
+    finally:
+        health_check_task.cancel()
+        logger.info("Shutting down the process pool")
+        app.state.process_pool.shutdown(wait=True)
 
 
 # FastAPI Initialization
